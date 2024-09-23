@@ -922,6 +922,7 @@ Class dzn_baseClassToSwizzleForTarget(id target)
     // The content view must alway be centered to its superview
     NSLayoutConstraint *centerXConstraint = [self equallyRelatedConstraintWithView:self.contentView attribute:NSLayoutAttributeCenterX];
     NSLayoutConstraint *centerYConstraint = [self equallyRelatedConstraintWithView:self.contentView attribute:NSLayoutAttributeCenterY];
+    NSLayoutConstraint *heightConstraint = [self equallyRelatedConstraintWithView:self.contentView attribute:NSLayoutAttributeHeight];
     
     [self addConstraint:centerXConstraint];
     [self addConstraint:centerYConstraint];
@@ -936,6 +937,7 @@ Class dzn_baseClassToSwizzleForTarget(id target)
     if (_customView) {
         [self.contentView addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"H:|[customView]|" options:0 metrics:nil views:@{@"customView":_customView}]];
         [self.contentView addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"V:|[customView]|" options:0 metrics:nil views:@{@"customView":_customView}]];
+        [self addConstraint:heightConstraint];
     }
     else {
         CGFloat width = CGRectGetWidth(self.frame) ? : CGRectGetWidth([UIScreen mainScreen].bounds);
