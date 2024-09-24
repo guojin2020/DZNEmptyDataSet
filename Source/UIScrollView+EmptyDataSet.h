@@ -138,6 +138,8 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (nullable UIView *)customViewForEmptyDataSet:(UIScrollView *)scrollView;
 
+- (CGFloat)customViewHeightForEmptyDataSet:(UIScrollView *)scrollView;
+
 /**
  Asks the data source for a offset for vertical and horizontal alignment of the content. Default is CGPointZero.
  

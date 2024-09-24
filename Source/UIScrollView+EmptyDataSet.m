@@ -37,6 +37,7 @@
 
 @property (nonatomic, assign) CGFloat verticalOffset;
 @property (nonatomic, assign) CGFloat verticalSpace;
+@property (nonatomic, assign) CGFloat customViewHeight;
 
 @property (nonatomic, assign) BOOL fadeInOnDisplay;
 
@@ -263,6 +264,16 @@ static char const * const kEmptyDataSetView =       "emptyDataSetView";
         return view;
     }
     return nil;
+}
+
+- (CGFloat)dzn_customViewHeight
+{
+    CGFloat height = 0.0;
+    
+    if (self.emptyDataSetSource && [self.emptyDataSetSource respondsToSelector:@selector(customViewHeightForEmptyDataSet:)]) {
+        height = [self.emptyDataSetSource customViewHeightForEmptyDataSet:self];
+    }
+    return height;
 }
 
 - (CGFloat)dzn_verticalOffset
@@ -521,6 +532,7 @@ static char const * const kEmptyDataSetView =       "emptyDataSetView";
         
         // Configure offset
         view.verticalOffset = [self dzn_verticalOffset];
+        view.customViewHeight = [self dzn_customViewHeight];
         
         // Configure the empty dataset view
         view.backgroundColor = [self dzn_dataSetBackgroundColor];
@@ -922,11 +934,13 @@ Class dzn_baseClassToSwizzleForTarget(id target)
     // The content view must alway be centered to its superview
     NSLayoutConstraint *centerXConstraint = [self equallyRelatedConstraintWithView:self.contentView attribute:NSLayoutAttributeCenterX];
     NSLayoutConstraint *centerYConstraint = [self equallyRelatedConstraintWithView:self.contentView attribute:NSLayoutAttributeCenterY];
+    NSLayoutConstraint *widthConstraint = [self equallyRelatedConstraintWithView:self.contentView attribute:NSLayoutAttributeWidth];
     NSLayoutConstraint *heightConstraint = [self equallyRelatedConstraintWithView:self.contentView attribute:NSLayoutAttributeHeight];
     
     [self addConstraint:centerXConstraint];
     [self addConstraint:centerYConstraint];
-    [self addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"H:|[contentView]|" options:0 metrics:nil views:@{@"contentView": self.contentView}]];
+    [self addConstraint:widthConstraint];
+    [self addConstraint:heightConstraint];
     
     // When a custom offset is available, we adjust the vertical constraints' constants
     if (self.verticalOffset != 0 && self.constraints.count > 0) {
@@ -935,9 +949,32 @@ Class dzn_baseClassToSwizzleForTarget(id target)
     
     // If applicable, set the custom view's constraints
     if (_customView) {
-        [self.contentView addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"H:|[customView]|" options:0 metrics:nil views:@{@"customView":_customView}]];
-        [self.contentView addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"V:|[customView]|" options:0 metrics:nil views:@{@"customView":_customView}]];
-        [self addConstraint:heightConstraint];
+        // 设置 customView 的高度
+        NSString *fmt = [NSString stringWithFormat:@"V:[customView(%f)]", self.customViewHeight];
+        [self.contentView addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:fmt
+                                                                                 options:0
+                                                                                 metrics:nil
+                                                                                   views:@{@"customView": self.customView}]];
+
+        // 添加 centerX 对齐约束
+        NSLayoutConstraint *centerXConstraint = [NSLayoutConstraint constraintWithItem:self.customView
+                                                                             attribute:NSLayoutAttributeCenterX
+                                                                             relatedBy:NSLayoutRelationEqual
+                                                                                toItem:self.contentView
+                                                                             attribute:NSLayoutAttributeCenterX
+                                                                            multiplier:1.0
+                                                                              constant:0.0];
+        [self.contentView addConstraint:centerXConstraint];
+
+        // 添加 centerY 对齐约束
+        NSLayoutConstraint *centerYConstraint = [NSLayoutConstraint constraintWithItem:self.customView
+                                                                             attribute:NSLayoutAttributeCenterY
+                                                                             relatedBy:NSLayoutRelationEqual
+                                                                                toItem:self.contentView
+                                                                             attribute:NSLayoutAttributeCenterY
+                                                                            multiplier:1.0
+                                                                              constant:0.0];
+        [self.contentView addConstraint:centerYConstraint];
     }
     else {
         CGFloat width = CGRectGetWidth(self.frame) ? : CGRectGetWidth([UIScreen mainScreen].bounds);
@@ -950,7 +987,6 @@ Class dzn_baseClassToSwizzleForTarget(id target)
         
         // Assign the image view's horizontal constraints
         if (_imageView.superview) {
-            
             [subviewStrings addObject:@"imageView"];
             views[[subviewStrings lastObject]] = _imageView;
             
@@ -1027,7 +1063,7 @@ Class dzn_baseClassToSwizzleForTarget(id target)
 - (UIView *)hitTest:(CGPoint)point withEvent:(UIEvent *)event
 {
     UIView *hitView = [super hitTest:point withEvent:event];
-    
+        
     // Return any UIControl instance such as buttons, segmented controls, switches, etc.
     if ([hitView isKindOfClass:[UIControl class]]) {
         return hitView;
