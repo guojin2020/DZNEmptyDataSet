@@ -973,7 +973,7 @@ Class dzn_baseClassToSwizzleForTarget(id target)
                                                                                 toItem:self.contentView
                                                                              attribute:NSLayoutAttributeCenterY
                                                                             multiplier:1.0
-                                                                              constant:0.0];
+                                                                              constant:self.verticalOffset];
         [self.contentView addConstraint:centerYConstraint];
     }
     else {
